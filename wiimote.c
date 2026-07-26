@@ -51,8 +51,8 @@ int process_report(struct wiimote_state *state, const uint8_t * buf, int len)
 {
   struct report_data * data = (struct report_data *)buf;
 
-  //every output report contains rumble info
-  state->sys.rumble = data->buf[0] & 0x01;
+  //every output report contains rumble info (the board has no rumble motor)
+  state->sys.rumble = (data->buf[0] & 0x01) && !state->usr.balance_board_mode;
 
   switch (data->type)
   {
@@ -83,7 +83,11 @@ int process_report(struct wiimote_state *state, const uint8_t * buf, int len)
     {
       struct report_ir_enable * rpt = (struct report_ir_enable *)data->buf;
 
-      state->sys.ircam_enabled = rpt->enabled;
+      //the board has no ir camera: acknowledge but never report it enabled
+      if (!state->usr.balance_board_mode)
+      {
+        state->sys.ircam_enabled = rpt->enabled;
+      }
 
       report_queue_push_ack(state, data->type, 0x00);
       break;
@@ -93,7 +97,11 @@ int process_report(struct wiimote_state *state, const uint8_t * buf, int len)
     {
       struct report_speaker_enable * rpt = (struct report_speaker_enable *)data->buf;
 
-      state->sys.speaker_enabled = !rpt->muted;
+      //the board has no speaker: acknowledge but never report it enabled
+      if (!state->usr.balance_board_mode)
+      {
+        state->sys.speaker_enabled = !rpt->muted;
+      }
 
       report_queue_push_ack(state, data->type, 0x00);
       break;
@@ -431,7 +439,10 @@ void write_register(struct wiimote_state *state, uint32_t offset, uint8_t size, 
   {
     case 0xa2: //speaker
       reg = state->sys.register_a2;
-      memcpy(reg + (offset & 0xff), buf, size);
+      if ((offset & 0xff) + size <= sizeof(state->sys.register_a2))
+      {
+        memcpy(reg + (offset & 0xff), buf, size);
+      }
       break;
     case 0xa4: //extension
       reg = (state->sys.wmp_state == 1) ? state->sys.register_a6 : state->sys.register_a4;
@@ -579,7 +590,10 @@ void write_register(struct wiimote_state *state, uint32_t offset, uint8_t size, 
       break;
     case 0xb0: //ir camera
       reg = state->sys.register_b0;
-      memcpy(reg + (offset & 0xff), buf, size);
+      if ((offset & 0xff) + size <= sizeof(state->sys.register_b0))
+      {
+        memcpy(reg + (offset & 0xff), buf, size);
+      }
       break;
     default: //???
       break;
