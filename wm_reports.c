@@ -255,6 +255,38 @@ void report_append_extension(struct wiimote_state * state, uint8_t * buf, uint8_
   //right now, they are always the same in all situations
   int addr_offset = 0x08, length = 6;
 
+  //the balance board's extension id byte (0x04) collides with motionplus in
+  //the switch below, so it must be dispatched on the extension type instead
+  if (state->sys.connected_extension_type == BalanceBoard)
+  {
+    //four load cells, big-endian uint16, order: TR, BR, TL, BL
+    //debug constant load: 17.5 kg per sensor (70 kg total, centered),
+    //raw = 10000 + kg * 100 with the synthetic calibration
+    uint16_t raw = state->usr.balance_weight ? 11750 : 10000;
+    int i;
+
+    for (i = 0; i < 4; i++)
+    {
+      buf[i * 2] = raw >> 8;
+      buf[i * 2 + 1] = raw & 0xff;
+    }
+
+    if (bytes >= 11)
+    {
+      buf[8] = 0x19; //temperature, must match the reference at register 0x60
+      buf[9] = 0x00;
+      buf[10] = state->sys.battery_level;
+    }
+
+    //board data streams from register 0x00; Wii Fit U enables encryption
+    if (state->sys.extension_encrypted)
+    {
+      ext_encrypt_bytes(&state->sys.extension_crypto_state, buf, 0x00, bytes);
+    }
+
+    return;
+  }
+
   switch (state->sys.extension_report_type)
   {
     case 0x00: //nunchuk

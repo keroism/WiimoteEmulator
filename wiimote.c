@@ -20,6 +20,33 @@ static uint8_t nunchuk_calibration[16] =
   0x81, 0x80, 0x7F, 0x22, 0xB5, 0xB3, 0xB3, 0x03, 0x00, 0x00, 0x7C, 0x00, 0x00, 0x83, 0x14, 0x69
 };
 
+//synthetic load-cell calibration: raw values at 0/17/34 kg for each of the
+//four sensors (TR, BR, TL, BL), big-endian, so raw = 10000 + kg * 100
+//(values match Dolphin's emulated balance board)
+static uint8_t balance_board_calibration[24] =
+{
+  0x27, 0x10, 0x27, 0x10, 0x27, 0x10, 0x27, 0x10, //0 kg  = 10000
+  0x2d, 0xb4, 0x2d, 0xb4, 0x2d, 0xb4, 0x2d, 0xb4, //17 kg = 11700
+  0x34, 0x58, 0x34, 0x58, 0x34, 0x58, 0x34, 0x58  //34 kg = 13400
+};
+
+//standard crc32 (reversed polynomial), used for the board calibration checksum
+static uint32_t crc32_update(uint32_t crc, const uint8_t * buf, int len)
+{
+  int i, j;
+
+  crc = ~crc;
+  for (i = 0; i < len; i++)
+  {
+    crc ^= buf[i];
+    for (j = 0; j < 8; j++)
+    {
+      crc = (crc >> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+  return ~crc;
+}
+
 int process_report(struct wiimote_state *state, const uint8_t * buf, int len)
 {
   struct report_data * data = (struct report_data *)buf;
@@ -173,6 +200,10 @@ int generate_report(struct wiimote_state * state, uint8_t * buf)
       break;
     case 0x32: // core buttons + 8 extension bytes
       report_append_buttons(state, contents);
+      if (state->sys.connected_extension_type == BalanceBoard)
+      {
+        report_append_extension(state, contents + 2, 8);
+      }
       len += 2 + 8;
       break;
     case 0x33: // core buttons + accelerometer + 12 ir bytes
@@ -808,9 +839,32 @@ void init_extension(struct wiimote_state * state)
         memcpy(&state->sys.register_a4[0x30], classic_calibration, 0x10);
         break;
       case BalanceBoard:
+      {
+        uint8_t * a4 = state->sys.register_a4;
+        uint32_t crc;
+
         state->sys.register_a4[0xfe] = 0x04;
         state->sys.register_a4[0xff] = 0x02;
+
+        a4[0x20] = 0x01;
+        a4[0x21] = 0x69; //reference battery level
+        a4[0x22] = 0x00;
+        a4[0x23] = 0x00;
+        memcpy(&a4[0x24], balance_board_calibration,
+          sizeof(balance_board_calibration));
+        a4[0x60] = 0x19; //reference temperature
+        a4[0x61] = 0x01;
+
+        //calibration checksum at 0x3c: crc32 of 0x24-0x3b, 0x20-0x21, 0x60-0x61
+        crc = crc32_update(0, &a4[0x24], 0x18);
+        crc = crc32_update(crc, &a4[0x20], 2);
+        crc = crc32_update(crc, &a4[0x60], 2);
+        a4[0x3c] = crc >> 24;
+        a4[0x3d] = crc >> 16;
+        a4[0x3e] = crc >> 8;
+        a4[0x3f] = crc;
         break;
+      }
     }
 
     state->sys.extension_report_type = state->sys.register_a4[0xfe];
@@ -828,7 +882,7 @@ void wiimote_destroy(struct wiimote_state *state)
   }
 }
 
-void wiimote_init(struct wiimote_state *state)
+void wiimote_init(struct wiimote_state *state, bool balance_board)
 {
   memset(state, 0, sizeof(struct wiimote_state));
 
@@ -842,7 +896,8 @@ void wiimote_init(struct wiimote_state *state)
   reset_input_classic(&state->usr.classic);
   reset_input_motionplus(&state->usr.motionplus);
 
-  state->usr.connected_extension_type = NoExtension;
+  state->usr.balance_board_mode = balance_board;
+  state->usr.connected_extension_type = balance_board ? BalanceBoard : NoExtension;
 
   wiimote_reset(state);
 
@@ -860,7 +915,17 @@ void wiimote_reset(struct wiimote_state *state)
   state->sys.reporting_mode = 0x30;
   state->sys.battery_level = 0xff;
 
-  state->sys.connected_extension_type = NoExtension;
+  if (state->usr.balance_board_mode)
+  {
+    //the board's load-cell extension is permanently connected: never report
+    //it unplugged and never run the hotplug path in generate_report
+    state->sys.connected_extension_type = BalanceBoard;
+    state->sys.extension_connected = 1;
+  }
+  else
+  {
+    state->sys.connected_extension_type = NoExtension;
+  }
 
   init_extension(state);
 }

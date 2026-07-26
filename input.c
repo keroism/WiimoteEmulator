@@ -40,6 +40,10 @@ int input_update(struct wiimote_state *state, struct input_source const * source
       }
       break;
     case INPUT_EVENT_TYPE_HOTPLUG:
+      //the balance board's extension is permanently attached
+      if (state->usr.balance_board_mode)
+        break;
+
       switch (event.hotplug_event.extension)
       {
       case Nunchuk:
@@ -152,6 +156,10 @@ int input_update(struct wiimote_state *state, struct input_source const * source
         break;
       case INPUT_BUTTON_CLASSIC_MINUS:
         state->usr.classic.minus = pressed;
+        break;
+
+      case INPUT_BUTTON_BALANCE_WEIGHT:
+        state->usr.balance_weight = pressed;
         break;
       default:
         printf("warning: button %d not handled by input_update\n", event.button_event.button);

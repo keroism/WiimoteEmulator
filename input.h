@@ -64,6 +64,9 @@ enum input_button
     INPUT_BUTTON_CLASSIC_ZR,
     INPUT_BUTTON_CLASSIC_PLUS,
     INPUT_BUTTON_CLASSIC_MINUS,
+
+    //debug: hold to put the constant test load on the balance board
+    INPUT_BUTTON_BALANCE_WEIGHT,
 };
 
 struct input_button_event

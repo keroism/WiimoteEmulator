@@ -90,6 +90,11 @@ struct wiimote_state_usr
   bool sync;
   bool power;
 
+  //balance board mode (set once at startup, static for the process lifetime)
+  bool balance_board_mode;
+  //debug weight: held = constant test load on the board, released = 0 kg
+  bool balance_weight;
+
   //accelerometer (10 bit range)
   //0 acceleration is approximately 0x200
   uint16_t accel_x;
@@ -156,7 +161,7 @@ struct wiimote_state
   struct wiimote_state_usr usr;
 };
 
-void wiimote_init(struct wiimote_state *state);
+void wiimote_init(struct wiimote_state *state, bool balance_board);
 void wiimote_destroy(struct wiimote_state *state);
 
 void wiimote_reset(struct wiimote_state *state);

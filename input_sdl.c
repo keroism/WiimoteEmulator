@@ -34,7 +34,9 @@ void input_sdl_init(void)
          "   ,'       `.\n"
          "  ,' t     y '.     0: toggles arrow keys between\n"
          "  V           V        IR/nunchuk/classic/motion plus\n"
-         "                    ESC: quit\n\n");
+         "                    ESC: quit\n"
+         "                    w: hold to load the balance board\n"
+         "                       (~70 kg, balance board mode only)\n\n");
 }
 
 static void input_sdl_unload(void)
@@ -244,6 +246,9 @@ static bool input_sdl_poll_event(struct input_event *out_event)
       break;
     case SDLK_h:
       out_event->button_event.button = INPUT_BUTTON_HOME;
+      break;
+    case SDLK_w:
+      out_event->button_event.button = INPUT_BUTTON_BALANCE_WEIGHT;
       break;
     case SDLK_KP8:
       if (arrow_function == 2)

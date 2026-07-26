@@ -24,6 +24,8 @@ static uint8_t original_simple_pairing_mode;
 
 static bdaddr_t wiimote_baddr;
 static const char wiimote_name[] = "Nintendo RVL-CNT-01";
+static const char balance_board_name[] = "Nintendo RVL-WBC-01";
+static const char * device_name = wiimote_name;
 static const uint32_t wiimote_class = 0x002504;
 static const uint8_t wiimote_iac[3] = { 0x00, 0x8B, 0x9E };
 
@@ -240,7 +242,7 @@ int set_up_device_name(int dd)
     return -1;
   }
 
-  ret = hci_write_local_name(dd, wiimote_name, HCI_TIMEOUT);
+  ret = hci_write_local_name(dd, device_name, HCI_TIMEOUT);
   if (ret < 0)
   {
     fprintf(stderr, "Can't write device name: %s (%d)\n", strerror(errno), errno);
@@ -248,6 +250,11 @@ int set_up_device_name(int dd)
   }
 
   return 0;
+}
+
+void adapter_set_balance_board_mode()
+{
+  device_name = balance_board_name;
 }
 
 int restore_device_name(int dd)

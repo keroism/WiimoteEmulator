@@ -214,7 +214,7 @@ void disconnect()
 
 void print_usage(char *argv0)
 {
-  printf("usage: %s [ <wii-bdaddr> [ gui | unix <path> | ip <port> ] ]\n", argv0);
+  printf("usage: %s [ --balance-board | -b ] [ <wii-bdaddr> [ gui | unix <path> | ip <port> ] ]\n", argv0);
 }
 
 int main(int argc, char *argv[])
@@ -230,6 +230,22 @@ int main(int argc, char *argv[])
   int send_report_now = 1;
   int input_result;
   int failure = 0;
+  int balance_board = 0;
+  int i, j;
+
+  //strip --balance-board / -b from argv before positional parsing
+  for (i = 1, j = 1; i < argc; i++)
+  {
+    if (strcmp(argv[i], "--balance-board") == 0 || strcmp(argv[i], "-b") == 0)
+    {
+      balance_board = 1;
+    }
+    else
+    {
+      argv[j++] = argv[i];
+    }
+  }
+  argc = j;
 
   if (argc > 1)
   {
@@ -274,6 +290,13 @@ int main(int argc, char *argv[])
   signal(SIGTERM, sig_handler);
   signal(SIGHUP, sig_handler);
 
+  if (balance_board)
+  {
+    printf("balance board mode\n");
+    adapter_set_balance_board_mode();
+    sdp_set_balance_board_mode();
+  }
+
   if (set_up_device(NULL) < 0)
   {
     printf("failed to set up Bluetooth device\n");
@@ -289,7 +312,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  wiimote_init(&state);
+  wiimote_init(&state, balance_board);
 
   if (has_host)
   {
@@ -439,7 +462,8 @@ int main(int argc, char *argv[])
       }
       else
       {
-        disconnect(&host_bdaddr);
+        //disconnect(&host_bdaddr);
+        disconnect();
       }
     }
 

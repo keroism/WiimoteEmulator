@@ -196,6 +196,7 @@ static bool input_socket_poll_event(struct input_event *event)
     else CHECK(CLASSIC_R);
     else CHECK(CLASSIC_ZL);
     else CHECK(CLASSIC_ZR);
+    else CHECK(BALANCE_WEIGHT);
     else CHECK(CLASSIC_PLUS);
     else CHECK(CLASSIC_MINUS);
 #undef CHECK
