@@ -631,6 +631,11 @@ void reset_input_motionplus(struct wiimote_motionplus * motionplus)
   motionplus->pitch_slow = 1;
 }
 
+void reset_input_balance_board(struct wiimote_balance_board * balance_board)
+{
+  memset(balance_board, 0, sizeof(struct wiimote_balance_board));
+}
+
 void init_extension(struct wiimote_state * state)
 {
   if (state->sys.connected_extension_type == NoExtension)
@@ -895,6 +900,7 @@ void wiimote_init(struct wiimote_state *state, bool balance_board)
   reset_input_nunchuk(&state->usr.nunchuk);
   reset_input_classic(&state->usr.classic);
   reset_input_motionplus(&state->usr.motionplus);
+  reset_input_balance_board(&state->usr.balance_board);
 
   state->usr.balance_board_mode = balance_board;
   state->usr.connected_extension_type = balance_board ? BalanceBoard : NoExtension;

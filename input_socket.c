@@ -240,6 +240,20 @@ static bool input_socket_poll_event(struct input_event *event)
       return false;
     }
   }
+  else if (strcmp(event_type_s, "balance") == 0)
+  {
+    //balance <tr> <br> <tl> <bl>, per-sensor load in kilograms as floats
+    event->type = INPUT_EVENT_TYPE_BALANCE;
+
+    if (sscanf(buf, "%*s %f %f %f %f",
+          &event->balance_event.tr_kg, &event->balance_event.br_kg,
+          &event->balance_event.tl_kg, &event->balance_event.bl_kg) != 4)
+    {
+      printf(PROGRAM_NAME ": received invalid 'balance' parameters\n");
+      buf_len = 0;
+      return false;
+    }
+  }
   else
   {
     printf(PROGRAM_NAME ": received invalid event type: %s\n", event_type_s);

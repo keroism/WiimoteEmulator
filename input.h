@@ -12,6 +12,7 @@ enum input_event_type
     INPUT_EVENT_TYPE_HOTPLUG,
     INPUT_EVENT_TYPE_BUTTON,
     INPUT_EVENT_TYPE_ANALOG_MOTION,
+    INPUT_EVENT_TYPE_BALANCE,
 };
 
 enum input_emulator_control
@@ -104,6 +105,15 @@ enum input_analog_motion
     INPUT_ANALOG_MOTION_MOTIONPLUS_SLOW,
 };
 
+//per-sensor load on the balance board, in kilograms
+struct input_balance_event
+{
+    float tr_kg;
+    float br_kg;
+    float tl_kg;
+    float bl_kg;
+};
+
 struct input_analog_motion_event
 {
     bool moving;
@@ -121,6 +131,7 @@ struct input_event
         struct input_hotplug_event hotplug_event;
         struct input_button_event button_event;
         struct input_analog_motion_event analog_motion_event;
+        struct input_balance_event balance_event;
     };
 };
 

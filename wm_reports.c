@@ -260,13 +260,28 @@ void report_append_extension(struct wiimote_state * state, uint8_t * buf, uint8_
   if (state->sys.connected_extension_type == BalanceBoard)
   {
     //four load cells, big-endian uint16, order: TR, BR, TL, BL
-    //debug constant load: 17.5 kg per sensor (70 kg total, centered),
-    //raw = 10000 + kg * 100 with the synthetic calibration
-    uint16_t raw = state->usr.balance_weight ? 11750 : 10000;
+    //debug weight key overrides with 17.5 kg per sensor (70 kg, centered)
+    float kg[4];
     int i;
+
+    if (state->usr.balance_weight)
+    {
+      kg[0] = kg[1] = kg[2] = kg[3] = 17.5f;
+    }
+    else
+    {
+      kg[0] = state->usr.balance_board.tr_kg;
+      kg[1] = state->usr.balance_board.br_kg;
+      kg[2] = state->usr.balance_board.tl_kg;
+      kg[3] = state->usr.balance_board.bl_kg;
+    }
 
     for (i = 0; i < 4; i++)
     {
+      float value = BALANCE_BOARD_RAW_0KG + kg[i] * BALANCE_BOARD_RAW_PER_KG;
+      uint16_t raw = (value <= 0.0f) ? 0 :
+                     (value >= 65535.0f) ? 65535 : (uint16_t)(value + 0.5f);
+
       buf[i * 2] = raw >> 8;
       buf[i * 2 + 1] = raw & 0xff;
     }

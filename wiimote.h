@@ -62,6 +62,19 @@ struct wiimote_classic
 
 };
 
+//per-sensor load in kilograms; converted to raw values using the synthetic
+//calibration (raw = BALANCE_BOARD_RAW_0KG + kg * BALANCE_BOARD_RAW_PER_KG)
+#define BALANCE_BOARD_RAW_0KG 10000
+#define BALANCE_BOARD_RAW_PER_KG 100
+
+struct wiimote_balance_board
+{
+  float tr_kg;
+  float br_kg;
+  float tl_kg;
+  float bl_kg;
+};
+
 struct wiimote_motionplus
 {
   uint16_t yaw_down;
@@ -108,6 +121,7 @@ struct wiimote_state_usr
   struct wiimote_nunchuk nunchuk;
   struct wiimote_classic classic;
   struct wiimote_motionplus motionplus;
+  struct wiimote_balance_board balance_board;
 };
 
 void reset_ir_object(struct wiimote_ir_object * object);
@@ -115,6 +129,7 @@ void reset_input_ir(struct wiimote_ir_object ir_object[4]);
 void reset_input_nunchuk(struct wiimote_nunchuk * nunchuk);
 void reset_input_classic(struct wiimote_classic * classic);
 void reset_input_motionplus(struct wiimote_motionplus * motionplus);
+void reset_input_balance_board(struct wiimote_balance_board * balance_board);
 
 struct wiimote_state_sys
 {

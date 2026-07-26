@@ -167,6 +167,12 @@ int input_update(struct wiimote_state *state, struct input_source const * source
       }
       break;
     }
+    case INPUT_EVENT_TYPE_BALANCE:
+      state->usr.balance_board.tr_kg = event.balance_event.tr_kg;
+      state->usr.balance_board.br_kg = event.balance_event.br_kg;
+      state->usr.balance_board.tl_kg = event.balance_event.tl_kg;
+      state->usr.balance_board.bl_kg = event.balance_event.bl_kg;
+      break;
     case INPUT_EVENT_TYPE_ANALOG_MOTION: {
       bool moving = event.analog_motion_event.moving;
       switch (event.analog_motion_event.motion)
